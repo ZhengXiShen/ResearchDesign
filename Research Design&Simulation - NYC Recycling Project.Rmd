@@ -1,0 +1,459 @@
+---
+title: ""
+author:  ""
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, comment="", warning = FALSE, message = FALSE, tidy.opts=list(width.cutoff=55), tidy = TRUE)
+
+# Make sure to change the name of the file to something more descriptive for your project.
+```
+
+## Part 1:  Research Proposal
+
+### Executive Summary / Abstract
+
+**Authors (Names and Percentages)**: 
+
+
+
+
+### Statement of the Problem
+
+**Authors (Names and Percentages)**: 
+
+
+
+### Research Questions, Hypotheses, and Effects
+**Authors (Names and Percentages)**: 
+
+
+
+### Importance of the Study and Social Impact
+
+**Authors (Names and Percentages)**: 
+
+
+
+### Literature Review
+
+**Authors (Names and Percentages)**: 
+
+
+
+### Research Plan
+
+**Authors (Names and Percentages)**: 
+
+
+
+#### Population of Interest
+
+**Authors (Names and Percentages)**: 
+
+
+#### Sample Selection
+
+**Authors (Names and Percentages)**: 
+
+
+#### Operational Procedures
+
+**Authors (Names and Percentages)**: 
+
+
+#### Brief Schedule
+
+**Authors (Names and Percentages)**: 
+
+
+#### Data Collection
+
+**Authors (Names and Percentages)**: 
+
+
+
+#### Data Security
+
+**Authors (Names and Percentages)**: 
+
+
+#### Variables
+
+
+##### Outcomes (Dependent Variables)
+
+
+**Authors (Names and Percentages)**: 
+
+
+##### Treatments (Independent Variables)
+
+**Authors (Names and Percentages)**: 
+
+
+
+##### Other Variables
+
+**Authors (Names and Percentages)**: 
+
+
+
+### Statistical Analysis Plan  
+
+**Authors (Names and Percentages)**: 
+
+
+
+
+### Sample Size and Statistical Power
+
+**Authors (Names and Percentages)**: 
+
+
+
+
+### Possible Recommendations
+
+**Authors (Names and Percentages)**: 
+
+
+
+### Limitations and Uncertainties
+
+**Authors (Names and Percentages)**: 
+
+
+
+## Part 2:  Simulated Studies
+
+**Authors (Zhengxi Shen(100%) )**: 
+Base on the research pan, we build the simulation process to emulate different possible scenarios for our experiment and hypothesis. Our research questions are tested in a single experiment with different groups, so we will do separate simulation for each question. The control group will be the citizens who just act naturally on recycling behavior, and the treatment groups will be the population who receive the tutorial, and the population receive the tutorial and coupons for doing recycling. 
+
+
+### Research Question 1:
+
+#### Scenario 1:  No Effect
+
+**Authors (Zhengxi Shen(100%))**: 
+Under this scenario, our treatment does not affect the outcome of the population, which means after taking the tutorial citizens still not doing more recycling. It shows that taking tutorial and gain more knowledge of recycling seems will not encourage people to recycling more. It is necessary to find an alternative solution. Parameters: mean: both 16, sdControl = 7, sdTreatment = 5, sample size is 100 for each group
+
+##### Simulation
+
+```{r q1_scenario1_simulation p1}
+library(data.table)
+library(DT)
+library(dplyr)
+set.seed(seed = 329)
+
+#Set up one round of simulation with 200 sample size, 3 as mean and sd of 1
+n <- 200
+rc.dat1 <- data.table(Group = c(rep.int(x = "Treatment",
+                                       times = n/2), rep.int(x = "Control", 
+                                                             times = n/2)))
+rc.dat1[Group == "Control", rc :=round(x = rnorm(n = n/2, mean = 16,
+                                            sd = 7))]
+rc.dat1[Group == "Treatment", rc :=round(x = rnorm(n = n/2,
+                                              mean = 16, sd = 5))]
+data = rc.dat1
+head(data)
+
+```
+```{r q1_scenario1_simulation 1000}
+# Repeating the Scenario 1000 times with the same parameters
+B <- 1000
+n <- 200
+RNGversion(vstr = 3.6)
+set.seed(seed = 4172)
+
+Experiment <- 1:B
+Group <- c(rep.int(x = "Treatment", times = n/2), rep.int(x = "Control",
+                                                          times = n/2))
+sim.dat  <- as.data.table(expand.grid(Experiment = Experiment,
+                                     Group = Group))
+setorderv(x = sim.dat, cols = c("Experiment", "Group"), order = c(1,1))
+sim.dat[Group == "Control", rc := round(x = rnorm(n = .N, mean = 16, sd = 7))]
+sim.dat[Group == "Treatment", rc := round(x = rnorm(n = .N, mean = 16, sd = 5))]
+dim(sim.dat)
+
+```
+
+##### Analysis
+
+```{r q1_scenario1_analysis}
+analyze.experiment <- function(the.dat) {
+  require(data.table)
+  setDT(the.dat)
+  the.test <- t.test(x = the.dat[Group == "Treatment", 
+                                    rc], y = the.dat[Group == "Control", rc], alternative = "greater")
+  the.effect <- the.test$estimate[1] - the.test$estimate[2]
+  upper.bound <- the.test$conf.int[2]
+  lower.bound <- the.test$conf.int[1]
+  p <- the.test$p.value
+  result <- data.table(effect = the.effect, upper_ci = upper.bound,
+                       lower_ci = lower.bound, p = p)
+  return(result)
+}
+
+exp.results <- sim.dat[, analyze.experiment(the.dat = .SD), 
+                       keyby = "Experiment"]
+summary(exp.results)
+```
+
+```{r q1_scenario1_analysis results}
+# Percentage of False positive
+exp.results[, mean(p < 0.05)]
+
+# Percentage of True negative
+1 - exp.results[, mean(p < 0.05)]
+
+
+# Summary of P-Value
+exp.results[, summary(p)]
+
+
+# Summary of difference for prop-test
+exp.results[, summary(effect)]
+
+# Mean effect of the simulated data
+exp.results[, mean(effect)]
+
+# Summary of upper confidence interval of mean effect
+exp.results[, summary(upper_ci)]
+
+# Summary of lower confidence interval of mean effect
+exp.results[, summary(lower_ci)]
+
+```
+
+#### Scenario 2:  An Expected Effect
+
+**Authors (Zhengxi Shen(100%))**: 
+Under this scenario, our treatment (the tutorial) is likely to be effective on the outcome. These simulated data can be used to draw conclusion for our research and can possibly reject the null hypothesis. The analysis result can be the evidence to convince the government to popularize the tutorial on recycling. Perameters: meanControl = 16, meanTreatment = 20, sdControl = 8, sdTreatment = 7
+
+
+##### Simulation
+
+```{r q1_scenario2_simulation}
+#Skipping the test round, directly start to repeat the simulation for 100 times
+B <- 1000
+n <- 200
+RNGversion(vstr = 3.6)
+set.seed(seed = 4172)
+
+Experiment <- 1:B
+Group <- c(rep.int(x = "Treatment", times = n/2), rep.int(x = "Control",
+                                                          times = n/2))
+sim.dat  <- as.data.table(expand.grid(Experiment = Experiment,
+                                      Group = Group))
+setorderv(x = sim.dat, cols = c("Experiment", "Group"), order = c(1,1))
+sim.dat[Group == "Control", rc := round(x = rnorm(n = .N, mean = 16, sd = 8))]
+sim.dat[Group == "Treatment", rc := round(x = rnorm(n = .N, mean = 20, sd =7))]
+dim(sim.dat)
+
+
+```
+
+##### Analysis
+
+```{r q1_scenario2_analysis}
+analyze.experiment <- function(the.dat) {
+  require(data.table)
+  setDT(the.dat)
+  the.test <- t.test(x = the.dat[Group == "Treatment", 
+                                    rc], y = the.dat[Group == "Control", rc], alternative = "greater")
+  the.effect <- the.test$estimate[1] - the.test$estimate[2]
+  upper.bound <- the.test$conf.int[2]
+  lower.bound <- the.test$conf.int[1]
+  p <- the.test$p.value
+  result <- data.table(effect = the.effect, upper_ci = upper.bound,
+                       lower_ci = lower.bound, p = p)
+  return(result)
+}
+
+exp.results <- sim.dat[, analyze.experiment(the.dat = .SD), 
+                       keyby = "Experiment"]
+summary(exp.results)
+```
+```{r q1_scenario2_analysis results}
+# Percentage of True positive
+exp.results[, mean(p < 0.05)]
+
+# Percentage of False negative
+1 - exp.results[, mean(p < 0.05)]
+
+# Summary of P-Value
+exp.results[, summary(p)]
+
+# Summary of difference for prop-test
+exp.results[, summary(effect)]
+
+# Mean effect of the simulated data
+exp.results[, mean(effect)]
+
+# Summary of upper confidence interval of mean effect
+exp.results[, summary(upper_ci)]
+
+# Summary of lower confidence interval of mean effect
+exp.results[, summary(lower_ci)]
+
+```
+
+
+### Research Question 2:
+
+#### Scenario 1:  No Effect
+
+**Authors (Zhengxi Shen(100%))**: 
+Under this scenario, the treatment has no effect on the outcome on the sample population, which means that people are not encouraged to do more recycling by receiving grocery coupons additional to the tutorial. Thus, teh coupon treatment may not be considered in the further studies. Parameters:
+meanControl = 20, meanTreatment = 20, sdControl = 7,sdControl = 6, sample size = 100 for each group
+
+##### Simulation
+
+```{r q2_scenario1_simulation}
+# Repeating the Scenario 1000 times
+B <- 1000
+n <- 200
+RNGversion(vstr = 3.6)
+set.seed(seed = 4172)
+
+Experiment <- 1:B
+Group <- c(rep.int(x = "Treatment", times = n/2), rep.int(x = "Control",
+                                                          times = n/2))
+sim.dat  <- as.data.table(expand.grid(Experiment = Experiment,
+                                      Group = Group))
+setorderv(x = sim.dat, cols = c("Experiment", "Group"), order = c(1,1))
+sim.dat[Group == "Control", rc := round(x = rnorm(n = .N, mean = 20, sd = 7))]
+sim.dat[Group == "Treatment", rc := round(x = rnorm(n = .N, mean = 20, sd = 6))]
+dim(sim.dat)
+
+```
+
+##### Analysis
+
+```{r q2_scenario1_analysis}
+
+analyze.experiment <- function(the.dat) {
+  require(data.table)
+  setDT(the.dat)
+  the.test <- t.test(x = the.dat[Group == "Treatment", 
+                                    rc], y = the.dat[Group == "Control", rc], alternative = "greater")
+  the.effect <- the.test$estimate[1] - the.test$estimate[2]
+  upper.bound <- the.test$conf.int[2]
+  lower.bound <- the.test$conf.int[1]
+  p <- the.test$p.value
+  result <- data.table(effect = the.effect, upper_ci = upper.bound,
+                       lower_ci = lower.bound, p = p)
+  return(result)
+}
+
+exp.results <- sim.dat[, analyze.experiment(the.dat = .SD), 
+                       keyby = "Experiment"]
+summary(exp.results)
+```
+```{r q2_scenario1_analysis results}
+# Percentage of False positive
+exp.results[, mean(p < 0.05)]
+
+# Percentage of True negative
+1 - exp.results[, mean(p < 0.05)]
+
+
+# Summary of P-Value
+exp.results[, summary(p)]
+
+
+# Summary of difference for prop-test
+exp.results[, summary(effect)]
+
+# Mean effect of the simulated data
+exp.results[, mean(effect)]
+
+# Summary of upper confidence interval of mean effect
+exp.results[, summary(upper_ci)]
+
+# Summary of lower confidence interval of mean effect
+exp.results[, summary(lower_ci)]
+
+```
+
+
+#### Scenario 2:  An Expected Effect
+
+**Authors (Zhengxi Shen(100%))**: 
+Under this scenario, our treatment (the coupons) is likely to be effective on the outcome. These simulated data can be used to draw conclusion for our research and can possibly reject the null hypothesis. The analysis result can be the evidence to say giving out coupons is a further incentive for recycling. Perameters: meanControl = 20, meanTreatment = 21, sdControl = 7, sdTreatment = 10
+
+##### Simulation
+
+```{r q2_scenario2_simulation}
+# Repeating the Scenario 1000 times
+B <- 1000
+n <- 200
+RNGversion(vstr = 3.6)
+set.seed(seed = 4172)
+
+Experiment <- 1:B
+Group <- c(rep.int(x = "Treatment", times = n/2), rep.int(x = "Control",
+                                                          times = n/2))
+sim.dat  <- as.data.table(expand.grid(Experiment = Experiment,
+                                      Group = Group))
+setorderv(x = sim.dat, cols = c("Experiment", "Group"), order = c(1,1))
+sim.dat[Group == "Control", rc := round(x = rnorm(n = .N, mean = 20, sd = 7))]
+sim.dat[Group == "Treatment", rc := round(x = rnorm(n = .N, mean = 21, sd =10))]
+dim(sim.dat)
+```
+
+##### Analysis
+
+```{r q2_scenario2_analysis}
+analyze.experiment <- function(the.dat) {
+  require(data.table)
+  setDT(the.dat)
+  the.test <- t.test(x = the.dat[Group == "Treatment", 
+                                    rc], y = the.dat[Group == "Control", rc], alternative = "greater")
+  the.effect <- the.test$estimate[1] - the.test$estimate[2]
+  upper.bound <- the.test$conf.int[2]
+  lower.bound <- the.test$conf.int[1]
+  p <- the.test$p.value
+  result <- data.table(effect = the.effect, upper_ci = upper.bound,
+                       lower_ci = lower.bound, p = p)
+  return(result)
+}
+
+exp.results <- sim.dat[, analyze.experiment(the.dat = .SD), 
+                       keyby = "Experiment"]
+summary(exp.results)
+```
+```{r q2_scenario2_analysis results}
+# Percentage of True positive
+exp.results[, mean(p < 0.05)]
+
+# Percentage of False negative
+1 - exp.results[, mean(p < 0.05)]
+
+# Summary of P-Value
+exp.results[, summary(p)]
+
+# Summary of difference for prop-test
+exp.results[, summary(effect)]
+
+# Mean effect of the simulated data
+exp.results[, mean(effect)]
+
+# Summary of upper confidence interval of mean effect
+exp.results[, summary(upper_ci)]
+
+# Summary of lower confidence interval of mean effect
+exp.results[, summary(lower_ci)]
+
+```
+### Simulation Description
+During the simulation, in order to make sure that the treatments (tutorial and coupons) can provide enough evidence to support our hypothesis, we set the average recycled items number of three groups base on the effect size we want that shall be meaningful in the test. Since we are collecting the number of recycled item in one month, so we assume the average weekly recycled item of the control group as 4, so the mean used in simulation will be 4*4, 16 per month. For the group B, the one receive the tutorial, we assume their average number of recycling per month will increase by 25%, which is 4 more items. Thus, with an effective treatment the average number of recycled item for group B is 20 per month. Group C, which receive both the tutorial and coupons, follows the similar idea. The only difference is that we want to set giving coupons as a less effect treatment since it cost a lot of budget and cannot be a long time solution. Thus the monthly average of group C is 21 items. 
+We used one-sided t-test as the method to run simulation, so the upper bond of the confidence interval is always infinite. For the No Effect scenario, we use the same mean for both sample, but slight different standard deviations. For the scenario with AN Expected Effect, we use the means discussed above. Then the simulations were run for 1000 times. 
+Then, we analyzed the simulated data sets through two-sample t-test, to get all the statistical parameters we need to draw conclusion of our hypothesis and study. We calculated false positive and true positives and calculated true negative and false negative base on them. Mean effect sizes, mean p-value and lower bond of the confidence intervals were also gathered.
+
+## References
+
+**Authors (Names and Percentages)**: 
+
