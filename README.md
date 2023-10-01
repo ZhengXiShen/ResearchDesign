@@ -1,4 +1,4 @@
-#Research/Experiment Design
+# Research/Experiment Design
 
 ## Statement of Purpose
 While the benefits of recycling are commonplace knowledge in the United States, many individuals are uncertain regarding the process of recycling. This process can be generally separated into three parts - collecting, manufacturing, and purchasing. With the large variety of recycled products, including aluminum cans, paper towels, and even cereal boxes, many individuals purchase recyclable products without notice.   
